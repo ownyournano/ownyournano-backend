@@ -38,11 +38,11 @@ object DatabaseDataSource {
 
   val dataSource: DataSource = {
     val mutableDataSource = new HikariDataSource
-//    mutableDataSource.setJdbcUrl("jdbc:postgresql://postgres-nano-postgresql:5432/postgres")
-    mutableDataSource.setJdbcUrl("jdbc:postgresql://localhost:5432/postgres")
+    mutableDataSource.setJdbcUrl("jdbc:postgresql://postgres-nano-postgresql:5432/postgres")
+//    mutableDataSource.setJdbcUrl("jdbc:postgresql://localhost:5432/postgres")
     mutableDataSource.setUsername("postgres")
-//    mutableDataSource.setPassword("t6KDX2XQJS")
-    mutableDataSource.setPassword("example")
+    mutableDataSource.setPassword("t6KDX2XQJS")
+//    mutableDataSource.setPassword("example")
     mutableDataSource.setMaximumPoolSize(8)
     mutableDataSource.setConnectionTimeout(1000)
     mutableDataSource

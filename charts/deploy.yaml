@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: nanter-container
-        image: gurghet/nano-backend:0.1.0-SNAPSHOT
+        image: gurghet/nano-backend:0.3.0
         ports:
           - containerPort: 9000
 ---
