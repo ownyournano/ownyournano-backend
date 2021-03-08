@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nanter-deployment
+  labels:
+    app: nanter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nanter
+  template:
+    metadata:
+      labels:
+        app: nanter
+    spec:
+      containers:
+      - name: nanter-container
+        image: gurghet/nano-backend:0.1.0-SNAPSHOT
+        ports:
+          - containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nanter-service
+spec:
+  selector:
+    app: nanter
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000
