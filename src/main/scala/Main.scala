@@ -1,20 +1,19 @@
 import BinanceHoldingPoint.jsonEncoder
-import sttp.client3.{Request, UriContext, basicRequest}
-import sttp.client3.httpclient.zio.{HttpClientZioBackend, SttpClient, send}
-import zio._
-import zio.json._
+import _root_.doobie.implicits._
+import _root_.doobie.implicits.javasql._
+import _root_.doobie.implicits.javatime._
 import doobie.Transactor
-import io.github.gaelrenoux.tranzactio.{doobie, _}
+import io.github.gaelrenoux.tranzactio._
 import io.github.gaelrenoux.tranzactio.doobie.{Connection, Database, tzio}
+import sttp.client3.httpclient.zio.{HttpClientZioBackend, SttpClient, send}
+import sttp.client3.{Request, UriContext, basicRequest}
 import uzhttp.server.Server
+import zio._
 import zio.blocking.Blocking
 import zio.clock.Clock
-import zio.duration.durationInt
-import _root_.doobie.implicits._
-import _root_.doobie.implicits.javatime._
-import _root_.doobie.implicits.javasql._
 import zio.config.ReadError
-import zio.json.JsonCodec.{apply, list}
+import zio.duration.durationInt
+import zio.json._
 
 import java.net.InetSocketAddress
 import java.sql.Timestamp
@@ -106,7 +105,7 @@ object Main extends App {
             //noinspection SimplifyBimapInspection
             fetchBinanceHoldingHistory
               .map(listOfPoints => listOfPoints.toJson)
-              .map(uzhttp.Response.plain(_))
+              .map(jsonArray => uzhttp.Response.plain(jsonArray, headers = List("Access-Control-Allow-Origin" -> "*")))
               .mapError(
                 e => uzhttp.HTTPError.InternalServerError(s"unexpected error: ${e.getLocalizedMessage}")
               )

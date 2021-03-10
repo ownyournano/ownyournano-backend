@@ -23,7 +23,10 @@ spec:
           - name: HTTP_PORT
             value: "9000"
           - name: DB_PWD
-            value: "t6KDX2XQJS"
+            valueFrom:
+              secretKeyRef:
+                name: nanter-db-secret
+                key: password
           - name: DB_USER
             value: "postgres"
           - name: DB_URI
@@ -33,9 +36,20 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nanter-service
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-algorithm: "round_robin"
+    service.beta.kubernetes.io/do-loadbalancer-tls-ports: "443"
+    service.beta.kubernetes.io/do-loadbalancer-certificate-id: "2ddb0ac4-b578-4ea4-ae76-8b5e2321cefe"
+    service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
 spec:
   selector:
     app: nanter
   type: LoadBalancer
   ports:
-    - port: 9000
+    - port: 80
+      targetPort: 9000
+      name: http
+    - port: 443
+      targetPort: 9000
+      name: https
