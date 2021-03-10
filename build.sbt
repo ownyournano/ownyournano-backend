@@ -1,7 +1,7 @@
 ThisBuild / scalaVersion     := "2.13.5"
-ThisBuild / version          := "0.1.0-SNAPSHOT"
+ThisBuild / version          := "0.10.0-SNAPSHOT"
 ThisBuild / organization     := "nano"
-ThisBuild / organizationName := "example"
+ThisBuild / organizationName := "GG&Q"
 
 val zioVersion = "1.0.4-2"
 val doobieVersion = "0.9.2"
@@ -30,7 +30,6 @@ lazy val root = (project in file("."))
     dockerRepository := Some("index.docker.io"),
     dockerGroupLayers in Docker := PartialFunction.empty,
     dockerBaseImage := "adoptopenjdk/openjdk11",
-    version in Docker := "0.9.0"
   )
 enablePlugins(JavaAppPackaging)
 enablePlugins(DockerPlugin)
