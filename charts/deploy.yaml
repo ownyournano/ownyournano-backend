@@ -16,9 +16,18 @@ spec:
     spec:
       containers:
       - name: nanter-container
-        image: gurghet/nano-backend:0.3.0
+        image: gurghet/nano-backend:0.9.0
         ports:
           - containerPort: 9000
+        env:
+          - name: HTTP_PORT
+            value: "9000"
+          - name: DB_PWD
+            value: "t6KDX2XQJS"
+          - name: DB_USER
+            value: "postgres"
+          - name: DB_URI
+            value: "jdbc:postgresql://postgres-nano-postgresql:5432/postgres"
 ---
 apiVersion: v1
 kind: Service
@@ -27,7 +36,6 @@ metadata:
 spec:
   selector:
     app: nanter
+  type: LoadBalancer
   ports:
-    - protocol: TCP
-      port: 9000
-      targetPort: 9000
+    - port: 9000

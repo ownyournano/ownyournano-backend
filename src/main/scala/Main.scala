@@ -1,10 +1,11 @@
-import sttp.client3.{ Request, UriContext, basicRequest }
-import sttp.client3.httpclient.zio.{ HttpClientZioBackend, SttpClient, send }
+import BinanceHoldingPoint.jsonEncoder
+import sttp.client3.{Request, UriContext, basicRequest}
+import sttp.client3.httpclient.zio.{HttpClientZioBackend, SttpClient, send}
 import zio._
 import zio.json._
 import doobie.Transactor
-import io.github.gaelrenoux.tranzactio._
-import io.github.gaelrenoux.tranzactio.doobie.{ Connection, Database, tzio }
+import io.github.gaelrenoux.tranzactio.{doobie, _}
+import io.github.gaelrenoux.tranzactio.doobie.{Connection, Database, tzio}
 import uzhttp.server.Server
 import zio.blocking.Blocking
 import zio.clock.Clock
@@ -12,6 +13,8 @@ import zio.duration.durationInt
 import _root_.doobie.implicits._
 import _root_.doobie.implicits.javatime._
 import _root_.doobie.implicits.javasql._
+import zio.config.ReadError
+import zio.json.JsonCodec.{apply, list}
 
 import java.net.InetSocketAddress
 import java.sql.Timestamp
@@ -23,8 +26,9 @@ object NanoChartsResponse {
 }
 case class BinanceHoldingPoint(createdAt: Timestamp, amount: String)
 object BinanceHoldingPoint {
-  // apply does decoding?
-
+  implicit val jsonTimestampEncoder: JsonEncoder[Timestamp] =
+    JsonEncoder.instant.contramap[Timestamp](timestamp => Instant.ofEpochMilli(timestamp.getTime))
+  implicit val jsonEncoder: JsonEncoder[BinanceHoldingPoint] = DeriveJsonEncoder.gen[BinanceHoldingPoint]
 }
 
 object Main extends App {
@@ -58,13 +62,13 @@ object Main extends App {
       now: Instant,
       amount: String
     ): ZIO[Has[Transactor[Task]], DbException, Int] = {
-      val timestamp = new Timestamp(now.getEpochSecond)
+      val timestamp = new Timestamp(now.toEpochMilli)
       tzio {
-        sql"INSERT INTO binance_holdings (datapoint_id, created_at, amount) VALUES (${timestamp.getNanos}, $timestamp, $amount)".update.run
+        sql"INSERT INTO binance_holdings (datapoint_id, created_at, amount) VALUES (${timestamp.getTime / 1000}, $timestamp, $amount)".update.run
       }
     }
 
-    clock.nanoTime.map(nanoTime => Instant.ofEpochMilli(nanoTime / 1000000)).flatMap { now =>
+    clock.instant.flatMap { now =>
       Database.transactionOrDie(insertCurrentBinanceHoldingQuery(now, amount.toString))
     }
   }
@@ -93,25 +97,30 @@ object Main extends App {
   // create a new entry in the database with the new amount
   // at the same time
   // run a webserver, when queried gives the timeseries of amounts
-  final private val server: URIO[Database with Blocking with Clock, Nothing] = Server
-    .builder(new InetSocketAddress("127.0.0.1", 5480))
-    .handleSome {
-      case req if req.uri.getPath == "/" =>
-        //noinspection SimplifyBimapInspection
-        fetchBinanceHoldingHistory
-          .map(_.mkString)
-          .map(uzhttp.Response.plain(_))
-          .mapError(e => uzhttp.HTTPError.InternalServerError(s"unexpected error: ${e.getLocalizedMessage}"))
+  final private val server: URIO[Has[Config] with Database with Blocking with Clock, Nothing] =
+    ZIO.service[Config].flatMap { cfg =>
+      Server
+        .builder(new InetSocketAddress("0.0.0.0", cfg.httpPort))
+        .handleSome {
+          case req if req.uri.getPath == "/" =>
+            //noinspection SimplifyBimapInspection
+            fetchBinanceHoldingHistory
+              .map(listOfPoints => listOfPoints.toJson)
+              .map(uzhttp.Response.plain(_))
+              .mapError(
+                e => uzhttp.HTTPError.InternalServerError(s"unexpected error: ${e.getLocalizedMessage}")
+              )
+        }
+        .serve
+        .useForever
+        .orDie
     }
-    .serve
-    .useForever
-    .orDie
 
-  val databaseLayer: ZLayer[ZEnv, Nothing, Database] = (ZLayer
-    .requires[ZEnv] ++ ZLayer.succeed(DatabaseDataSource.dataSource)) >>> Database.fromDatasource
+  val databaseLayer: ZLayer[ZEnv, ReadError[String], Database] = (ZLayer
+    .requires[ZEnv] >+> (Config.live >>> DatabaseDataSource.dataSourceLayer)) >>> Database.fromDatasource
 
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] =
     (server <&> fetchBinanceAndSaveLoop)
-      .provideCustomLayer(databaseLayer ++ HttpClientZioBackend.layer())
+      .provideCustomLayer(databaseLayer ++ HttpClientZioBackend.layer() ++ Config.live)
       .exitCode
 }

@@ -30,7 +30,7 @@ lazy val root = (project in file("."))
     dockerRepository := Some("index.docker.io"),
     dockerGroupLayers in Docker := PartialFunction.empty,
     dockerBaseImage := "adoptopenjdk/openjdk11",
-    version in Docker := "0.3.0"
+    version in Docker := "0.9.0"
   )
 enablePlugins(JavaAppPackaging)
 enablePlugins(DockerPlugin)
