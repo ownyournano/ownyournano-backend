@@ -105,7 +105,8 @@ object Main extends App {
             //noinspection SimplifyBimapInspection
             fetchBinanceHoldingHistory
               .map(listOfPoints => computeDailyLast(listOfPoints))
-              .map(dailyLasts => dailyLasts.toJson)
+              .map(dailyLasts => dailyLasts.sortBy(_.createdAt))
+              .map(orderedDailyLasts => orderedDailyLasts.toJson)
               .map(jsonArray => uzhttp.Response.plain(jsonArray, headers = List("Access-Control-Allow-Origin" -> "*")))
               .mapError(
                 e => uzhttp.HTTPError.InternalServerError(s"unexpected error: ${e.getLocalizedMessage}")
