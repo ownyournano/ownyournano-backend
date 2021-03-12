@@ -17,7 +17,7 @@ import zio.json._
 
 import java.net.InetSocketAddress
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
 
 case class NanoChartsResponse(timestamp: Long, binanceHoldings: String)
 object NanoChartsResponse {
@@ -104,7 +104,8 @@ object Main extends App {
           case req if req.uri.getPath == "/" =>
             //noinspection SimplifyBimapInspection
             fetchBinanceHoldingHistory
-              .map(listOfPoints => listOfPoints.toJson)
+              .map(listOfPoints => computeDailyLast(listOfPoints))
+              .map(dailyLasts => dailyLasts.toJson)
               .map(jsonArray => uzhttp.Response.plain(jsonArray, headers = List("Access-Control-Allow-Origin" -> "*")))
               .mapError(
                 e => uzhttp.HTTPError.InternalServerError(s"unexpected error: ${e.getLocalizedMessage}")
@@ -114,6 +115,13 @@ object Main extends App {
         .useForever
         .orDie
     }
+
+  final private def computeDailyLast(listOfPoints: List[BinanceHoldingPoint]) =
+    listOfPoints.groupBy(binanceHoldingPoint => {
+      val instant = Instant.ofEpochMilli(binanceHoldingPoint.createdAt.getTime)
+      val date = LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
+      date.toLocalDate
+    }).map(entry => entry._2.last).toList
 
   val databaseLayer: ZLayer[ZEnv, ReadError[String], Database] = (ZLayer
     .requires[ZEnv] >+> (Config.live >>> DatabaseDataSource.dataSourceLayer)) >>> Database.fromDatasource
