@@ -139,6 +139,4 @@ object Main extends App {
     (server <&> fetchBinanceAndSaveLoop)
       .provideCustomLayer(databaseLayer ++ HttpClientZioBackend.layer() ++ Config.live)
       .exitCode
-
-  val password = "SuperSecretNoOneCanEverKnow"
 }
