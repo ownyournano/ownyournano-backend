@@ -4,9 +4,9 @@ import _root_.doobie.implicits.javasql._
 import _root_.doobie.implicits.javatime._
 import doobie.Transactor
 import io.github.gaelrenoux.tranzactio._
-import io.github.gaelrenoux.tranzactio.doobie.{Connection, Database, tzio}
-import sttp.client3.httpclient.zio.{HttpClientZioBackend, SttpClient, send}
-import sttp.client3.{Request, UriContext, basicRequest}
+import io.github.gaelrenoux.tranzactio.doobie.{ Connection, Database, tzio }
+import sttp.client3.httpclient.zio.{ HttpClientZioBackend, SttpClient, send }
+import sttp.client3.{ Request, UriContext, basicRequest }
 import uzhttp.server.Server
 import zio._
 import zio.blocking.Blocking
@@ -17,7 +17,7 @@ import zio.json._
 
 import java.net.InetSocketAddress
 import java.sql.Timestamp
-import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
+import java.time.{ Instant, LocalDateTime, ZoneId, ZoneOffset }
 
 case class NanoChartsResponse(timestamp: Long, binanceHoldings: String)
 object NanoChartsResponse {
@@ -107,7 +107,7 @@ object Main extends App {
               .map(listOfPoints => computeDailyLast(listOfPoints))
               .map(dailyLasts => dailyLasts.sortBy(_.createdAt))
               .map(orderedDailyLasts => orderedDailyLasts.toJson)
-              .map(jsonArray => uzhttp.Response.plain(jsonArray, headers = List("Access-Control-Allow-Origin" -> "*")))
+              .map(jsonArray => uzhttp.Response.plain(jsonArray, headers = jsonWithCorsHeaders))
               .mapError(
                 e => uzhttp.HTTPError.InternalServerError(s"unexpected error: ${e.getLocalizedMessage}")
               )
@@ -117,12 +117,20 @@ object Main extends App {
         .orDie
     }
 
+  private final val jsonWithCorsHeaders: List[(String, String)] = List(
+    "Access-Control-Allow-Origin" -> "*",
+    "Content-Type" -> "application/json; charset=utf-8"
+  )
+
   final private def computeDailyLast(listOfPoints: List[BinanceHoldingPoint]) =
-    listOfPoints.groupBy(binanceHoldingPoint => {
-      val instant = Instant.ofEpochMilli(binanceHoldingPoint.createdAt.getTime)
-      val date = LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
-      date.toLocalDate
-    }).map(entry => entry._2.last).toList
+    listOfPoints
+      .groupBy(binanceHoldingPoint => {
+        val instant = Instant.ofEpochMilli(binanceHoldingPoint.createdAt.getTime)
+        val date    = LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
+        date.toLocalDate
+      })
+      .map(entry => entry._2.last)
+      .toList
 
   val databaseLayer: ZLayer[ZEnv, ReadError[String], Database] = (ZLayer
     .requires[ZEnv] >+> (Config.live >>> DatabaseDataSource.dataSourceLayer)) >>> Database.fromDatasource
