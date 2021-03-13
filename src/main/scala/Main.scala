@@ -4,9 +4,9 @@ import _root_.doobie.implicits.javasql._
 import _root_.doobie.implicits.javatime._
 import doobie.Transactor
 import io.github.gaelrenoux.tranzactio._
-import io.github.gaelrenoux.tranzactio.doobie.{ Connection, Database, tzio }
-import sttp.client3.httpclient.zio.{ HttpClientZioBackend, SttpClient, send }
-import sttp.client3.{ Request, UriContext, basicRequest }
+import io.github.gaelrenoux.tranzactio.doobie.{Connection, Database, tzio}
+import sttp.client3.httpclient.zio.{HttpClientZioBackend, SttpClient, send}
+import sttp.client3.{Request, UriContext, basicRequest}
 import uzhttp.server.Server
 import zio._
 import zio.blocking.Blocking
@@ -17,7 +17,7 @@ import zio.json._
 
 import java.net.InetSocketAddress
 import java.sql.Timestamp
-import java.time.{ Instant, LocalDateTime, ZoneId, ZoneOffset }
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 case class NanoChartsResponse(timestamp: Long, binanceHoldings: String)
 object NanoChartsResponse {
