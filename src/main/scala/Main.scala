@@ -4,9 +4,9 @@ import _root_.doobie.implicits.javasql._
 import _root_.doobie.implicits.javatime._
 import doobie.Transactor
 import io.github.gaelrenoux.tranzactio._
-import io.github.gaelrenoux.tranzactio.doobie.{Connection, Database, tzio}
-import sttp.client3.httpclient.zio.{HttpClientZioBackend, SttpClient, send}
-import sttp.client3.{Request, UriContext, basicRequest}
+import io.github.gaelrenoux.tranzactio.doobie.{ Connection, Database, tzio }
+import sttp.client3.httpclient.zio.{ HttpClientZioBackend, SttpClient, send }
+import sttp.client3.{ Request, UriContext, basicRequest }
 import uzhttp.server.Server
 import zio._
 import zio.blocking.Blocking
@@ -17,7 +17,7 @@ import zio.json._
 
 import java.net.InetSocketAddress
 import java.sql.Timestamp
-import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.time.{ Instant, LocalDateTime, ZoneOffset }
 
 case class NanoChartsResponse(timestamp: Long, binanceHoldings: String)
 object NanoChartsResponse {
@@ -102,15 +102,10 @@ object Main extends App {
         .builder(new InetSocketAddress("0.0.0.0", cfg.httpPort))
         .handleSome {
           case req if req.uri.getPath == "/" =>
-            //noinspection SimplifyBimapInspection
-            fetchBinanceHoldingHistory
-              .map(listOfPoints => computeDailyLast(listOfPoints))
-              .map(dailyLasts => dailyLasts.sortBy(_.createdAt))
-              .map(orderedDailyLasts => orderedDailyLasts.toJson)
-              .map(jsonArray => uzhttp.Response.plain(jsonArray, headers = jsonWithCorsHeaders))
-              .mapError(
-                e => uzhttp.HTTPError.InternalServerError(s"unexpected error: ${e.getLocalizedMessage}")
-              )
+            req.headers.get("host") match {
+              case Some("ownyournano.cc")                => redirectToCloudera
+              case None | Some("nanter.gurghet.com") | _ => serveHoldingHistory
+            }
         }
         .serve
         .useForever
@@ -121,6 +116,34 @@ object Main extends App {
     "Access-Control-Allow-Origin" -> "*",
     "Content-Type" -> "application/json; charset=utf-8"
   )
+
+  private final val redirectToCloudera = UIO {
+    uzhttp.Response.html(
+      body = "<a href='https://ownyournano.pages.dev'>Found</a>.",
+      headers = List("Location" -> "https://ownyournano.pages.dev")
+    )
+  }
+
+  private final val serveHoldingHistory =
+    //noinspection SimplifyBimapInspection
+    fetchBinanceHoldingHistory
+      .map(listOfPoints => computeDailyLast(listOfPoints))
+      .map(dailyLasts => dailyLasts.sortBy(_.createdAt))
+      .map(orderedDailyLasts => takeSpaced(orderedDailyLasts, 30))
+      .map(orderedDailyLastsSample => orderedDailyLastsSample.toJson)
+      .map(jsonArray => uzhttp.Response.plain(jsonArray, headers = jsonWithCorsHeaders))
+      .mapError(
+        e => uzhttp.HTTPError.InternalServerError(s"unexpected error: ${e.getLocalizedMessage}")
+      )
+
+  private final def takeSpaced[A](list: List[A], samplesCount: Int): List[A] = {
+    list.zipWithIndex
+      .groupBy(_._2 / (list.size / samplesCount))
+      .map(entry => (entry._1, entry._2.head._1))
+      .toList
+      .sortBy(_._1)
+      .map(_._2)
+  }
 
   final private def computeDailyLast(listOfPoints: List[BinanceHoldingPoint]) =
     listOfPoints

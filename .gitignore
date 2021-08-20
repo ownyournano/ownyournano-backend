@@ -172,3 +172,10 @@ zsdoc/data
 # End of https://www.toptal.com/developers/gitignore/api/sbt,intellij,scala,linux,zsh
 
 .idea
+
+.vscode
+.bloop/
+.metals/
+project/.bloop
+project/metals.sbt
+project/project/
