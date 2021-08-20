@@ -120,6 +120,7 @@ object Main extends App {
   private final val redirectToCloudera = UIO {
     uzhttp.Response.html(
       body = "<a href='https://ownyournano.pages.dev'>Found</a>.",
+      status = uzhttp.Status.Found,
       headers = List("Location" -> "https://ownyournano.pages.dev")
     )
   }
