@@ -1,9 +1,9 @@
 ThisBuild / scalaVersion     := "2.13.5"
-ThisBuild / version          := "0.11.0-SNAPSHOT"
+ThisBuild / version          := "0.12.0"
 ThisBuild / organization     := "nano"
 ThisBuild / organizationName := "GG&Q"
 
-val zioVersion = "1.0.4-2"
+val zioVersion    = "1.0.4-2"
 val doobieVersion = "0.9.2"
 
 lazy val root = (project in file("."))
@@ -23,13 +23,13 @@ lazy val root = (project in file("."))
       "dev.zio"                       %% "zio-json"               % "0.1+18-466aeb0e-SNAPSHOT",
       "dev.zio"                       %% "zio-test"               % zioVersion % Test
     ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
-    resolvers      += Resolver.sonatypeRepo("snapshots"),
-    dockerExposedPorts ++= Seq(9000),
-    dockerUsername := Some("gurghet"),
-    dockerRepository := Some("index.docker.io"),
+    testFrameworks              += new TestFramework("zio.test.sbt.ZTestFramework"),
+    resolvers                   += Resolver.sonatypeRepo("snapshots"),
+    dockerExposedPorts          ++= Seq(9000),
+    dockerUsername              := Some("gurghet"),
+    dockerRepository            := Some("index.docker.io"),
     dockerGroupLayers in Docker := PartialFunction.empty,
-    dockerBaseImage := "adoptopenjdk/openjdk11",
+    dockerBaseImage             := "adoptopenjdk/openjdk11"
   )
 enablePlugins(JavaAppPackaging)
 enablePlugins(DockerPlugin)
