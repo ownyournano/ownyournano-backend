@@ -138,13 +138,13 @@ object Main extends App {
       )
 
   private final def takeSpaced[A](list: List[A], samplesCount: Int): List[A] = {
-    list.zipWithIndex
+    list.init.zipWithIndex
       .groupBy(_._2 / (list.size / samplesCount))
       .map(entry => (entry._1, entry._2.head._1))
       .toList
       .sortBy(_._1)
       .map(_._2)
-  }
+  } :+ list.last
 
   final private def computeDailyLast(listOfPoints: List[BinanceHoldingPoint]) =
     listOfPoints
