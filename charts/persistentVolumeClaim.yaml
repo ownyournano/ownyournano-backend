@@ -1,0 +1,38 @@
+# This is to use the specified volume in case of moving stuff or upgrading
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nanter-postgres-persistent-volume
+  annotations:
+    # fake it by indicating this is provisioned dynamically, so the system
+    # works properly
+    pv.kubernetes.io/provisioned-by: dobs.csi.digitalocean.com
+  namespace: nanter
+spec:
+  storageClassName: do-block-storage
+  # by default, the volume will be not deleted if you delete the PVC, change to
+  # "Delete" if you wish the volume to be deleted automatically with the PVC
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  csi:
+    driver: dobs.csi.digitalocean.com
+    fsType: ext4
+    volumeHandle: df404311-7ea2-11eb-8bfd-0a58ac14d067
+    volumeAttributes:
+      com.digitalocean.csi/noformat: "true"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nanter-postgres-persistent-volume-claim
+  namespace: nanter
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Gi
+  storageClassName: do-block-storage

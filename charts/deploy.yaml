@@ -1,9 +1,11 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nanter-deployment
   labels:
     app: nanter
+  namespace: nanter
 spec:
   replicas: 1
   selector:
@@ -18,7 +20,7 @@ spec:
         runAsNonRoot: true
       containers:
       - name: nanter-container
-        image: gurghet/nano-backend:0.13.0
+        image: gurghet/nano-backend:0.13.0 # TODO: index.docker.io
         ports:
           - containerPort: 9000
         env:
@@ -42,8 +44,9 @@ metadata:
     service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
     service.beta.kubernetes.io/do-loadbalancer-algorithm: "round_robin"
     service.beta.kubernetes.io/do-loadbalancer-tls-ports: "443"
-    service.beta.kubernetes.io/do-loadbalancer-certificate-id: "2ddb0ac4-b578-4ea4-ae76-8b5e2321cefe"
+    service.beta.kubernetes.io/do-loadbalancer-certificate-id: "915aca20-8cf2-45aa-83d3-bea82c936a8d"
     service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
+  namespace: nanter
 spec:
   selector:
     app: nanter
